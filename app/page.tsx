@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import type SpeechRecognition from "speech-recognition" // Import SpeechRecognition
+
 import { useState, useRef, useEffect } from "react"
-import { Send, Code, Sparkles, Moon, Sun, Bot, User, AlertCircle, Mic } from "lucide-react" // Added Mic and Volume2 icons
+import { Send, Code, Sparkles, Moon, Sun, Bot, User, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -13,15 +13,6 @@ interface Message {
   content: string
   role: "user" | "assistant"
   timestamp: Date
-}
-
-// Declare Web Speech API interfaces globally for TypeScript
-declare global {
-  interface Window {
-    SpeechRecognition: typeof SpeechRecognition
-    webkitSpeechRecognition: typeof SpeechRecognition
-    SpeechSynthesisUtterance: typeof SpeechSynthesisUtterance
-  }
 }
 
 export default function VibeCodingChatbot() {
@@ -39,12 +30,7 @@ export default function VibeCodingChatbot() {
   const [isDark, setIsDark] = useState(true)
   const [hasApiKey, setHasApiKey] = useState(false)
   const [provider, setProvider] = useState("None")
-  const [isRecording, setIsRecording] = useState(false) // State for recording
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  // Web Speech API refs
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
-  const speechSynthesisRef = useRef<SpeechSynthesis | null>(null)
 
   // Check if API key is available
   useEffect(() => {
@@ -70,45 +56,7 @@ export default function VibeCodingChatbot() {
         setHasApiKey(false)
         setProvider("None")
       })
-
-    // Initialize Web Speech API
-    if (window.SpeechRecognition || window.webkitSpeechRecognition) {
-      recognitionRef.current = new (window.SpeechRecognition || window.webkitSpeechRecognition)()
-      recognitionRef.current.continuous = false // Listen for a single utterance
-      recognitionRef.current.interimResults = true // Get results as they come in
-      recognitionRef.current.lang = "en-US"
-
-      recognitionRef.current.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map((result) => result[0])
-          .map((result) => result.transcript)
-          .join("")
-        setInput(transcript) // Update input field with live transcript
-      }
-
-      recognitionRef.current.onend = () => {
-        setIsRecording(false)
-        if (input.trim()) {
-          // If there's transcribed text, submit it
-          handleSubmit(new Event("submit") as React.FormEvent)
-        }
-      }
-
-      recognitionRef.current.onerror = (event) => {
-        console.error("Speech recognition error:", event.error)
-        setIsRecording(false)
-        alert(`Speech recognition error: ${event.error}. Please try again or check microphone permissions.`)
-      }
-    } else {
-      console.warn("Web Speech API not supported in this browser.")
-    }
-
-    if ("speechSynthesis" in window) {
-      speechSynthesisRef.current = window.speechSynthesis
-    } else {
-      console.warn("Web Speech Synthesis API not supported in this browser.")
-    }
-  }, [input]) // Re-run effect if input changes to ensure onend has latest input
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -342,7 +290,7 @@ class VibeCodeGenerator:
         for char in text:
             print(char, end='', flush=True)
             time.sleep(delay)
-        print()  // New line at the end
+        print()  # New line at the end
 
 # Usage example
 generator = VibeCodeGenerator()
@@ -416,7 +364,6 @@ Python with style! This creates dynamic color palettes and animated effects! üê
         }
 
         setMessages((prev) => [...prev, botMessage])
-        speak(botMessage.content) // Speak the AI's response
       } else {
         // Use simulated response
         setTimeout(
@@ -429,7 +376,6 @@ Python with style! This creates dynamic color palettes and animated effects! üê
               timestamp: new Date(),
             }
             setMessages((prev) => [...prev, botMessage])
-            speak(botMessage.content) // Speak the simulated response
           },
           1000 + Math.random() * 1000,
         )
@@ -443,7 +389,6 @@ Python with style! This creates dynamic color palettes and animated effects! üê
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, errorMessage])
-      speak(errorMessage.content) // Speak the error message
     } finally {
       setIsLoading(false)
     }
@@ -520,40 +465,6 @@ Python with style! This creates dynamic color palettes and animated effects! üê
       <div className="whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: formatText(content) }} />
     )
   }
-
-  // --- Web Speech API Functions ---
-  const startSpeechRecognition = () => {
-    if (recognitionRef.current && !isRecording) {
-      setInput("") // Clear input before starting
-      recognitionRef.current.start()
-      setIsRecording(true)
-      console.log("Speech recognition started...")
-    } else if (recognitionRef.current && isRecording) {
-      recognitionRef.current.stop() // Stop if already recording
-      setIsRecording(false)
-      console.log("Speech recognition stopped.")
-    } else {
-      alert("Speech Recognition API not supported or initialized.")
-    }
-  }
-
-  const speak = (text: string) => {
-    if (speechSynthesisRef.current && text) {
-      // Stop any ongoing speech
-      if (speechSynthesisRef.current.speaking) {
-        speechSynthesisRef.current.cancel()
-      }
-      const utterance = new SpeechSynthesisUtterance(text)
-      // Optional: Set voice, pitch, rate
-      // utterance.voice = speechSynthesisRef.current.getVoices().find(voice => voice.lang === 'en-US' && voice.name === 'Google US English');
-      // utterance.pitch = 1;
-      // utterance.rate = 1;
-      speechSynthesisRef.current.speak(utterance)
-    } else {
-      console.warn("Speech Synthesis API not supported or text is empty.")
-    }
-  }
-  // --- End Web Speech API Functions ---
 
   return (
     <div
@@ -697,33 +608,18 @@ Python with style! This creates dynamic color palettes and animated effects! üê
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={
-                isRecording
-                  ? "Listening..."
-                  : hasApiKey
-                    ? `Ask ${provider} AI anything about coding... ‚ú®`
-                    : "Ask me anything about coding... ‚ú®"
+                hasApiKey ? `Ask ${provider} AI anything about coding... ‚ú®` : "Ask me anything about coding... ‚ú®"
               }
               className={`flex-1 ${
                 isDark
                   ? "bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
                   : "bg-white/50 border-gray-300 text-gray-900 placeholder-gray-500"
               } backdrop-blur-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
-              disabled={isLoading || isRecording} // Disable input while recording
-            />
-            {/* Microphone Button */}
-            <Button
-              type="button" // Important: type="button" to prevent form submission
-              onClick={startSpeechRecognition}
               disabled={isLoading}
-              className={`bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-blue-500/25 transition-all duration-200 hover:scale-105 ${
-                isRecording ? "animate-pulse-fast ring-4 ring-blue-500/50" : ""
-              }`}
-            >
-              <Mic size={18} className={isRecording ? "text-red-400" : ""} />
-            </Button>
+            />
             <Button
               type="submit"
-              disabled={!input.trim() || isLoading || isRecording} // Disable submit while recording
+              disabled={!input.trim() || isLoading}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-200 hover:scale-105"
             >
               {isLoading ? <Sparkles size={18} className="animate-spin" /> : <Send size={18} />}
