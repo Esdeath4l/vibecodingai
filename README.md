@@ -1,17 +1,21 @@
 
-# Vibe Coding Chatbot 🤖💻
+# 🤖 Vibe Coding Chatbot – Agentic AI Developer Assistant
 
-A real-time, interactive AI chatbot designed for helping developers with coding queries, debugging, and explanations — powered by **SambaNova AI** and built using **Next.js**, **Tailwind CSS**, and **Lucide Icons**.
+A real-time, interactive AI chatbot designed to help developers with coding queries, explanations, and debugging — powered by **SambaNova AI**, built using **Next.js**, **Tailwind CSS**, and **Lucide Icons**.
 
 🔗 [Live Demo](https://v0-vibe-coding-chatbot-ritikas-projects-fcfe67ad.vercel.app)
 
+---
+
 ## ✨ Features
 
-- ⚡ Fast and responsive AI responses powered by **SambaNova API**
-- 💬 Clean chat interface with markdown rendering and code formatting
-- 🎨 Elegant UI with **Tailwind CSS** and **Lucide Icons**
-- 🧠 Message-based interaction system using OpenAI SDK or custom LLM support
-- 🚀 Deployed on **Vercel** for fast performance and scalability
+- ⚡ Fast and responsive AI chat powered by SambaNova
+- 💬 Clean, intuitive UI with markdown and code formatting
+- 🧠 Context-aware interactions using message history
+- 🎨 Elegant design using Tailwind CSS + Lucide Icons
+- 🚀 Deployed on Vercel for optimal performance
+
+---
 
 ## 📁 Project Structure
 
@@ -20,22 +24,24 @@ A real-time, interactive AI chatbot designed for helping developers with coding 
 vibecodingai/
 │
 ├── app/                    # App routes and pages
-│   └── api/                # API routes (POST handler for AI chat)
+│   └── api/                # POST endpoint for handling chat messages
 │
-├── components/             # Reusable UI components (ChatBox, MessageBubble, etc.)
-├── lib/                    # Utility and helper functions
-├── public/                 # Static files and assets
-├── styles/                # Tailwind CSS configurations
-├── .env.local              # API keys and secrets (not committed)
+├── components/             # Chat UI components (ChatBox, Bubble, etc.)
+├── lib/                    # Helper utilities
+├── public/                 # Static assets
+├── styles/                 # Tailwind config
+├── .env.local              # API key configuration
 ├── next.config.js
 ├── tailwind.config.js
 └── README.md
 
 ````
 
+---
+
 ## ⚙️ Getting Started
 
-### 1. Clone the Repo
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Esdeath4l/vibecodingai.git
@@ -52,56 +58,100 @@ yarn install
 
 ### 3. Set Environment Variables
 
-Create a `.env.local` file in the root and add your SambaNova or OpenAI API key:
+Create a `.env.local` file and add your SambaNova or OpenAI API key:
 
-```
-SAMBANOVA_API_KEY=your_sambanova_api_key_here
+```env
+SAMBANOVA_API_KEY=your_api_key_here
 ```
 
-### 4. Run the App
+### 4. Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the chatbot in action.
+Visit `http://localhost:3000` to see the chatbot live.
+
+---
 
 ## 🧠 Technologies Used
 
-* **Next.js** — React Framework for Server-Side Rendering
-* **Tailwind CSS** — Utility-first styling
-* **Lucide Icons** — Beautiful open-source icons
-* **@ai-sdk/openai** — AI message handling layer
-* **SambaNova API** — Custom LLM backend
-
-## 📦 Deployment
-
-This app is deployed with [Vercel](https://vercel.com). To deploy your own version:
-
-1. Push your code to GitHub
-2. Import into Vercel
-3. Add environment variables
-4. Deploy 🚀
-
-## 🙋‍♀️ Author
-
-**Ritika S. (Esdeath4l)**
-🔗 [GitHub](https://github.com/Esdeath4l) | 💼 [LinkedIn](https://www.linkedin.com/in/ritika-s-450ab1252/)
+* **Next.js** – App Router-based React framework
+* **Tailwind CSS** – Utility-first styling
+* **Lucide Icons** – Clean and modern icons
+* **@ai-sdk/openai** – LLM interaction wrapper
+* **SambaNova API** – High-performance LLM backend
+* **Vercel** – Deployment and hosting
 
 ---
 
-## 💖 Show Your Support
+## 🏆 Hackathon Submission
 
-If you like this project:
+This project is submitted for the **Agentic Chatbot Hackathon by Assessli**.
 
-🌟 Give it a star
-📣 Share it with your friends
-🐛 Open an issue or submit a PR
+### 🧩 Problem Statement Addressed
+
+> Build a real-time agentic chatbot with orchestration (LangGraph or Agno), STT, VAD, TTS modules, LLM APIs, scalable architecture, and multi-user support.
 
 ---
 
-## 📃 License
+## 🧱 System Architecture (Planned)
 
-This project is licensed under the MIT License.
+```
+User Input (Text/Voice)
+     ↓
+VAD + STT (Planned)
+     ↓
+Agent Orchestration (LangGraph / Agno)
+     ↓
+LLM API (SambaNova / OpenAI)
+     ↓
+TTS (Optional)
+     ↓
+Frontend UI (Next.js)
+```
+
+* Multi-user: planned via session context
+* Memory/state: scoped per user interaction
+* Voice support: STT/VAD module in development
+
+---
+
+## 💡 Future Enhancements
+
+* LangGraph-based workflow orchestration
+* STT using Whisper or faster real-time options
+* TTS using Google/Suno/SpeechT5
+* Persistent memory with Redis integration
+* Mobile-responsive UI and dark mode toggle
+
+---
+
+## 👥 Team
+
+**Ritika S.** – Full Stack Developer
+**Rekha** – UI/UX & Component Design
+
+GitHub: [@Esdeath4l](https://github.com/Esdeath4l)
+
+---
+
+## 📽️ Demo Video
+
+*Will be added before prototype submission deadline (July 7, 2025).*
+
+---
+
+## 📝 License
+
+This project is open source under the **MIT License**.
+
+---
+
+## 💖 Support
+
+If you like the project:
+
+🌟 Star this repo
+🐛 Open an issue
+📣 Share it with others
