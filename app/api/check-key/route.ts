@@ -1,11 +1,31 @@
-export async function GET() {
-  const apiKey = process.env.SAMBANOVA_API_KEY || process.env.OPENAI_API_KEY
-  const hasKey = !!apiKey
-  const provider = process.env.SAMBANOVA_API_KEY ? "Sambanova" : process.env.OPENAI_API_KEY ? "OpenAI" : "None"
+import { NextResponse } from "next/server"
 
-  return Response.json({
-    hasKey,
-    provider,
-    keyPreview: apiKey ? `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}` : null,
-  })
+export async function GET() {
+  try {
+    const sambanovaKey = process.env.SAMBANOVA_API_KEY
+    const openaiKey = process.env.OPENAI_API_KEY
+
+    if (sambanovaKey) {
+      return NextResponse.json({
+        hasKey: true,
+        provider: "Sambanova",
+      })
+    } else if (openaiKey) {
+      return NextResponse.json({
+        hasKey: true,
+        provider: "OpenAI",
+      })
+    } else {
+      return NextResponse.json({
+        hasKey: false,
+        provider: "None",
+      })
+    }
+  } catch (error) {
+    console.error("Error checking API key:", error)
+    return NextResponse.json({
+      hasKey: false,
+      provider: "None",
+    })
+  }
 }

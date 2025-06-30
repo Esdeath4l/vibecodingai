@@ -101,13 +101,13 @@ export default function VibeCodingChatbot() {
     let highlighted = code
 
     // Highlight strings
-    highlighted = highlighted.replace(strings, '<span class="text-green-400">$1</span>')
+    highlighted = highlighted.replace(strings, '<span class="text-emerald-400">$1</span>')
 
     // Highlight comments
-    highlighted = highlighted.replace(comments, '<span class="text-gray-500 italic">$1</span>')
+    highlighted = highlighted.replace(comments, '<span class="text-gray-400 italic">$1</span>')
 
     // Highlight numbers
-    highlighted = highlighted.replace(numbers, '<span class="text-blue-400">$&</span>')
+    highlighted = highlighted.replace(numbers, '<span class="text-cyan-400">$&</span>')
 
     // Highlight keywords
     keywords.forEach((keyword) => {
@@ -401,6 +401,25 @@ Python with style! This creates dynamic color palettes and animated effects! üê
     }
   }
 
+  // Enhanced text formatting function
+  const formatText = (text: string) => {
+    // Handle bold text (**text** or __text__)
+    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>')
+    formatted = formatted.replace(/__(.*?)__/g, '<strong class="font-bold">$1</strong>')
+
+    // Handle italic text (*text* or _text_)
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+    formatted = formatted.replace(/_(.*?)_/g, '<em class="italic">$1</em>')
+
+    // Handle inline code (`code`)
+    formatted = formatted.replace(
+      /`([^`]+)`/g,
+      '<code class="bg-gray-700 text-pink-300 px-1 py-0.5 rounded text-sm font-mono">$1</code>',
+    )
+
+    return formatted
+  }
+
   const renderMessage = (content: string) => {
     if (content.includes("```")) {
       const parts = content.split("```")
@@ -415,11 +434,11 @@ Python with style! This creates dynamic color palettes and animated effects! üê
 
               return (
                 <div key={index} className="my-4">
-                  <div className="bg-gray-900 rounded-t-lg px-4 py-2 text-sm text-gray-400 flex items-center gap-2">
+                  <div className="bg-gray-800 rounded-t-lg px-4 py-2 text-sm text-gray-300 flex items-center gap-2 border-b border-gray-700">
                     <Code size={16} />
-                    <span className="capitalize">{language}</span>
+                    <span className="capitalize font-medium">{language}</span>
                   </div>
-                  <pre className="bg-black rounded-b-lg p-4 overflow-x-auto">
+                  <pre className="bg-gray-900 rounded-b-lg p-4 overflow-x-auto border border-gray-700 border-t-0">
                     <code
                       className="text-sm font-mono text-gray-100 leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: highlightCode(code) }}
@@ -428,11 +447,13 @@ Python with style! This creates dynamic color palettes and animated effects! üê
                 </div>
               )
             } else {
-              // Regular text
+              // Regular text with formatting
               return (
-                <div key={index} className="whitespace-pre-wrap leading-relaxed">
-                  {part}
-                </div>
+                <div
+                  key={index}
+                  className="whitespace-pre-wrap leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: formatText(part) }}
+                />
               )
             }
           })}
@@ -440,7 +461,9 @@ Python with style! This creates dynamic color palettes and animated effects! üê
       )
     }
 
-    return <div className="whitespace-pre-wrap leading-relaxed">{content}</div>
+    return (
+      <div className="whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: formatText(content) }} />
+    )
   }
 
   return (

@@ -1,113 +1,111 @@
-export async function POST(req: Request) {
+import { type NextRequest, NextResponse } from "next/server"
+import { generateText } from "ai"
+import { createOpenAI } from "@ai-sdk/openai"
+
+export async function POST(req: NextRequest) {
   try {
-    // Check if Sambanova API key exists
-    const apiKey = process.env.SAMBANOVA_API_KEY
-
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({
-          error: "API key not configured",
-          message: "Please add your SAMBANOVA_API_KEY environment variable to enable AI responses.",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
-      )
-    }
-
     const { messages } = await req.json()
 
-    // Use Sambanova API directly with non-streaming for better compatibility
-    const response = await fetch("https://api.sambanova.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "Meta-Llama-3.1-8B-Instruct",
+    if (!messages || !Array.isArray(messages)) {
+      return NextResponse.json({ error: "Invalid messages format" }, { status: 400 })
+    }
+
+    const sambanovaKey = process.env.SAMBANOVA_API_KEY
+    const openaiKey = process.env.OPENAI_API_KEY
+
+    let result
+
+    if (sambanovaKey) {
+      // Use Sambanova API
+      const sambanova = createOpenAI({
+        apiKey: sambanovaKey,
+        baseURL: "https://api.sambanova.ai/v1",
+      })
+
+      result = await generateText({
+        model: sambanova("Meta-Llama-3.1-8B-Instruct"),
         messages: [
           {
             role: "system",
-            content: `You are a helpful and enthusiastic coding assistant with a modern, aesthetic vibe. Your personality traits:
+            content: `You are a Vibe Coding Assistant - a stylish, modern AI that helps with programming questions. 
 
-🎨 PERSONALITY:
-- Friendly, encouraging, and passionate about coding
-- Use emojis occasionally (but not excessively) 
-- Explain complex concepts in simple, digestible terms
-- Always maintain a positive, "can-do" attitude
-- Make coding feel fun and accessible
+Your personality:
+- Enthusiastic and energetic about coding
+- Use emojis and modern slang appropriately 
+- Focus on clean, modern code practices
+- Explain things clearly but with style
+- Always include practical examples
+- Make coding fun and engaging
 
-💻 CODING EXPERTISE:
-- Provide clean, well-commented code examples
-- Always use proper markdown code blocks with language specification
-- Include best practices and modern approaches
-- Suggest optimizations and improvements
-- Cover multiple programming languages and frameworks
+When providing code:
+- Use modern syntax and best practices
+- Include helpful comments
+- Show multiple approaches when relevant
+- Explain the "why" behind solutions
+- Use proper formatting and structure
 
-✨ RESPONSE STYLE:
-- Keep responses concise but thorough
-- Use clear headings and structure when explaining concepts
-- Provide practical, runnable examples
-- Include relevant tips and tricks
-- End with encouraging words or next steps
-
-🔧 CODE FORMATTING:
-- Always format code properly with syntax highlighting
-- Include comments to explain complex parts
-- Provide complete, working examples when possible
-- Show both basic and advanced approaches when relevant
-
-Remember: You're not just answering questions - you're inspiring developers to create amazing things! Keep the vibe positive and the code clean! 🚀`,
+Keep responses helpful, accurate, and maintain that vibey, modern coding assistant personality! ✨`,
           },
           ...messages,
         ],
+        maxTokens: 1000,
         temperature: 0.7,
-        max_tokens: 2000,
-        stream: false, // Disable streaming for better compatibility
-      }),
-    })
+      })
+    } else if (openaiKey) {
+      // Use OpenAI API
+      const openai = createOpenAI({
+        apiKey: openaiKey,
+      })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error("Sambanova API error:", response.status, errorText)
-      throw new Error(`Sambanova API error: ${response.status}`)
+      result = await generateText({
+        model: openai("gpt-4o-mini"),
+        messages: [
+          {
+            role: "system",
+            content: `You are a Vibe Coding Assistant - a stylish, modern AI that helps with programming questions. 
+
+Your personality:
+- Enthusiastic and energetic about coding
+- Use emojis and modern slang appropriately 
+- Focus on clean, modern code practices
+- Explain things clearly but with style
+- Always include practical examples
+- Make coding fun and engaging
+
+When providing code:
+- Use modern syntax and best practices
+- Include helpful comments
+- Show multiple approaches when relevant
+- Explain the "why" behind solutions
+- Use proper formatting and structure
+
+Keep responses helpful, accurate, and maintain that vibey, modern coding assistant personality! ✨`,
+          },
+          ...messages,
+        ],
+        maxTokens: 1000,
+        temperature: 0.7,
+      })
+    } else {
+      return NextResponse.json({ error: "No API key configured" }, { status: 500 })
     }
 
-    const data = await response.json()
-    const content = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a response."
-
-    return new Response(JSON.stringify({ content }), {
-      headers: { "Content-Type": "application/json" },
+    return NextResponse.json({
+      content: result.text,
     })
-  } catch (error: any) {
-    console.error("Chat API Error:", error)
+  } catch (error) {
+    console.error("Chat API error:", error)
 
-    // Handle specific errors
-    if (error?.message?.includes("401")) {
-      return new Response(
-        JSON.stringify({
-          error: "Invalid API key",
-          message: "The provided Sambanova API key is incorrect. Please check your API key.",
-        }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        },
-      )
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes("API key")) {
+        return NextResponse.json({ error: "Invalid API key. Please check your configuration." }, { status: 401 })
+      }
+      if (error.message.includes("quota") || error.message.includes("limit")) {
+        return NextResponse.json({ error: "API quota exceeded. Please check your usage limits." }, { status: 429 })
+      }
     }
 
-    return new Response(
-      JSON.stringify({
-        error: "Failed to process chat request",
-        message: "An unexpected error occurred. Please try again.",
-        details: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    )
+    return NextResponse.json({ error: "Failed to generate response. Please try again." }, { status: 500 })
   }
 }
