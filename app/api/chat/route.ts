@@ -1,8 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { createOpenAI } from "@ai-sdk/openai"
-import { sambanova } from "@ai-sdk/sambanova"
 import { Redis } from "@upstash/redis" // Import Upstash Redis client
+import { sambanova, createOpenAI } from "ai-sdk" // Import AI SDK functions
 
 // Initialize Upstash Redis client
 let redis: Redis | null = null
@@ -95,39 +94,16 @@ Maintain a helpful, accurate, and sophisticated persona.`,
     ]
     console.log("[v0] Messages for AI:", messagesForAI)
 
-    const sambanovaKey = process.env.SAMBANOVA_API_KEY
-    const openaiKey = process.env.OPENAI_API_KEY
-
-    console.log("[v0] Sambanova API Key status:", sambanovaKey ? "Loaded (masked)" : "NOT LOADED")
-    console.log("[v0] OpenAI API Key status:", openaiKey ? "Loaded (masked)" : "NOT LOADED")
-
-    let result
-
-    if (sambanovaKey) {
-      // Use Sambanova API with proper AI SDK 5 format
-      console.log("[v0] Using Sambanova AI model.")
-      result = await generateText({
-        model: sambanova("Meta-Llama-3.1-8B-Instruct"),
-        messages: messagesForAI as any, // Cast to any to match AI SDK's Message type
-        maxTokens: 1000,
-        temperature: 0.7,
-      })
-    } else if (openaiKey) {
-      // Use OpenAI API
-      const openai = createOpenAI({
-        apiKey: openaiKey,
-      })
-      console.log("[v0] Using OpenAI AI model.")
-      result = await generateText({
-        model: openai("gpt-4o-mini"),
-        messages: messagesForAI as any, // Cast to any to match AI SDK's Message type
-        maxTokens: 1000,
-        temperature: 0.7,
-      })
-    } else {
-      console.error("[v0] Error: No AI API key configured.")
-      return NextResponse.json({ error: "No AI API key configured" }, { status: 500 })
-    }
+    console.log("[v0] Using Sambanova AI model via Vercel AI Gateway.")
+    
+    // Use Sambanova via Vercel AI Gateway - no additional API keys needed
+    const result = await generateText({
+      model: "sambanova/Meta-Llama-3.1-8B-Instruct",
+      messages: messagesForAI as any, // Cast to any to match AI SDK's Message type
+      maxTokens: 1000,
+      temperature: 0.7,
+    })
+    
     console.log("[v0] AI response generated.")
 
     // 2. Save user message and AI response to Upstash KV
