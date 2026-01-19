@@ -5,41 +5,60 @@ import { sambanova } from "@ai-sdk/sambanova"
 import { Redis } from "@upstash/redis" // Import Upstash Redis client
 
 // Initialize Upstash Redis client
-const kvUrl = process.env.UPSTASH_REDIS_REST_URL!
-const kvToken = process.env.UPSTASH_REDIS_REST_TOKEN!
+let redis: Redis | null = null
 
-// Log the Upstash KV URL and a masked version of the token to verify environment variables are loaded
-console.log("Upstash Redis URL:", kvUrl ? "Loaded" : "NOT LOADED")
-console.log("Upstash Redis Token:", kvToken ? "Loaded (masked)" : "NOT LOADED")
+try {
+  const kvUrl = process.env.UPSTASH_REDIS_REST_URL
+  const kvToken = process.env.UPSTASH_REDIS_REST_TOKEN
 
-const redis = new Redis({
-  url: kvUrl,
-  token: kvToken,
-})
+  console.log("[v0] Upstash Redis URL:", kvUrl ? "Loaded" : "NOT LOADED")
+  console.log("[v0] Upstash Redis Token:", kvToken ? "Loaded (masked)" : "NOT LOADED")
+
+  if (!kvUrl || !kvToken) {
+    console.error("[v0] ERROR: Missing Upstash Redis environment variables!")
+  } else {
+    redis = new Redis({
+      url: kvUrl,
+      token: kvToken,
+    })
+    console.log("[v0] Redis client initialized successfully")
+  }
+} catch (error) {
+  console.error("[v0] ERROR initializing Redis client:", error)
+}
 
 export async function POST(req: NextRequest) {
   try {
+    // Check if Redis is initialized
+    if (!redis) {
+      console.error("[v0] ERROR: Redis client not initialized")
+      return NextResponse.json(
+        { error: "Redis connection not available. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables." },
+        { status: 500 },
+      )
+    }
+
     // Log incoming request body
     const requestBody = await req.json()
-    console.log("Incoming request body:", requestBody)
+    console.log("[v0] Incoming request body:", requestBody)
 
     const { userId, newMessageContent } = requestBody
 
     if (!newMessageContent) {
-      console.error("Error: Message content is required.")
+      console.error("[v0] Error: Message content is required.")
       return NextResponse.json({ error: "Message content is required" }, { status: 400 })
     }
     // For now, use a placeholder userId if not provided.
     // In a real app, this would come from authenticated session.
     const currentUserId = userId || "00000000-0000-0000-0000-000000000001" // Placeholder user ID
-    console.log("Current User ID:", currentUserId)
+    console.log("[v0] Current User ID:", currentUserId)
 
     const conversationKey = `chat:user:${currentUserId}`
 
     // 1. Fetch previous messages for context from Upstash KV
-    console.log(`Attempting to fetch history for key: ${conversationKey}`)
+    console.log(`[v0] Attempting to fetch history for key: ${conversationKey}`)
     const existingHistory = await redis.get<Array<{ role: string; content: string }>>(conversationKey)
-    console.log("Existing history from Upstash KV:", existingHistory)
+    console.log("[v0] Existing history from Upstash KV:", existingHistory)
 
     // Combine previous messages with the new user message for the AI context
     // If no existing history, start with an empty array
@@ -74,19 +93,19 @@ Maintain a helpful, accurate, and sophisticated persona.`,
       ...(existingHistory || []), // Add previous messages from Upstash KV
       { role: "user", content: newMessageContent }, // Add the new user message
     ]
-    console.log("Messages for AI:", messagesForAI)
+    console.log("[v0] Messages for AI:", messagesForAI)
 
     const sambanovaKey = process.env.SAMBANOVA_API_KEY
     const openaiKey = process.env.OPENAI_API_KEY
 
-    console.log("Sambanova API Key status:", sambanovaKey ? "Loaded (masked)" : "NOT LOADED")
-    console.log("OpenAI API Key status:", openaiKey ? "Loaded (masked)" : "NOT LOADED")
+    console.log("[v0] Sambanova API Key status:", sambanovaKey ? "Loaded (masked)" : "NOT LOADED")
+    console.log("[v0] OpenAI API Key status:", openaiKey ? "Loaded (masked)" : "NOT LOADED")
 
     let result
 
     if (sambanovaKey) {
       // Use Sambanova API with proper AI SDK 5 format
-      console.log("Using Sambanova AI model.")
+      console.log("[v0] Using Sambanova AI model.")
       result = await generateText({
         model: sambanova("Meta-Llama-3.1-8B-Instruct"),
         messages: messagesForAI as any, // Cast to any to match AI SDK's Message type
@@ -98,7 +117,7 @@ Maintain a helpful, accurate, and sophisticated persona.`,
       const openai = createOpenAI({
         apiKey: openaiKey,
       })
-      console.log("Using OpenAI AI model.")
+      console.log("[v0] Using OpenAI AI model.")
       result = await generateText({
         model: openai("gpt-4o-mini"),
         messages: messagesForAI as any, // Cast to any to match AI SDK's Message type
@@ -106,10 +125,10 @@ Maintain a helpful, accurate, and sophisticated persona.`,
         temperature: 0.7,
       })
     } else {
-      console.error("Error: No AI API key configured.")
+      console.error("[v0] Error: No AI API key configured.")
       return NextResponse.json({ error: "No AI API key configured" }, { status: 500 })
     }
-    console.log("AI response generated.")
+    console.log("[v0] AI response generated.")
 
     // 2. Save user message and AI response to Upstash KV
     const updatedHistory = [
@@ -117,16 +136,16 @@ Maintain a helpful, accurate, and sophisticated persona.`,
       { role: "user", content: newMessageContent },
       { role: "assistant", content: result.text },
     ]
-    console.log("Saving updated history to Upstash KV:", updatedHistory)
+    console.log("[v0] Saving updated history to Upstash KV:", updatedHistory)
     await redis.set(conversationKey, updatedHistory)
-    console.log("History saved to Upstash KV.")
+    console.log("[v0] History saved to Upstash KV.")
 
     return NextResponse.json({
       content: result.text,
       // No conversationId to return with Upstash KV, as userId is the key
     })
   } catch (error) {
-    console.error("Chat API error:", error)
+    console.error("[v0] Chat API error:", error)
 
     if (error instanceof Error) {
       if (error.message.includes("API key")) {
@@ -138,7 +157,7 @@ Maintain a helpful, accurate, and sophisticated persona.`,
       // Add specific error handling for Upstash KV if needed
       if (error.message.includes("Upstash") || error.message.includes("Redis")) {
         return NextResponse.json(
-          { error: `Upstash KV error: ${error.message}. Check KV_REST_API_URL and KV_REST_API_TOKEN.` },
+          { error: `Upstash KV error: ${error.message}. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.` },
           { status: 500 },
         )
       }
