@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { Redis } from "@upstash/redis" // Import Upstash Redis client
-import { sambanova, createOpenAI } from "ai-sdk" // Import AI SDK functions
 
 // Initialize Upstash Redis client
 let redis: Redis | null = null
